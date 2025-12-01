@@ -1,53 +1,55 @@
+from typing import Iterable
+
 INPUT_FILE = '2025/1_input.txt'
 
 
-class Dial:
+def find_answer(lines: Iterable[str]):
+    position = 50
+    n_positions = 100
 
-    def __init__(self, *,
-                 position: int = 50,
-                 n_positions: int = 100,
-                 position_for_password: int = 0):
-        self._position = position
-        self._n_positions = n_positions
-        self._position_for_password = position_for_password
-        self._n_stops_at_position_for_password = 0
-        print(f'The dial starts by pointing at {self._position}')
+    answer_1 = 0
+    answer_2 = 0
 
-    def rotate_left(self, count: int):
-        self._position -= count
-        self._normalize_position()
-        self._n_stops_at_position_for_password += self._at_password_position
-        print(f'The dial is rotated L{count} to point at {self._position}')
+    print(f'The dial starts by pointing at {position}')
 
-    def rotate_right(self, count: int):
-        self._position += count
-        self._normalize_position()
-        self._n_stops_at_position_for_password += self._at_password_position
-        print(f'The dial is rotated R{count} to point at {self._position}')
-
-    @property
-    def password(self) -> int:
-        return self._n_stops_at_position_for_password
-
-    def _normalize_position(self):
-        self._position %= self._n_positions
-
-    @property
-    def _at_password_position(self) -> bool:
-        return self._position == self._position_for_password
-
-
-dial = Dial()
-
-with open(INPUT_FILE) as file:
-    for line in file:
+    for line in lines:
         direction = line[0]
         count = int(line[1:])
 
+        old_position = position
+
         match direction:
             case 'L':
-                dial.rotate_left(count)
+                position -= count
             case 'R':
-                dial.rotate_right(count)
+                position += count
 
-print(f'The answer is {dial.password}')
+        n_crossings = abs(position // n_positions)
+        position %= n_positions
+
+        #                   div  rot  ans2
+        # 50 -> R150 -> 0:   2    1   +2
+        # 50 -> L150 -> 0:  -1    1   +2
+        # 0 -> R150 -> 50:   1    1   +1
+        # 0 -> L150 -> 50:  -2    1   +1
+        if old_position == 0 and direction == 'L':
+            n_crossings -= 1
+
+        if position == 0 and direction == 'R':
+            n_crossings -= 1
+
+        answer_1 += position == 0
+        answer_2 += (position == 0) + n_crossings
+
+        message = f'The dial is rotated {line[:-1]} to point at {position}'
+        if n_crossings > 0:
+            message += f'; during this rotation, it points at 0 {n_crossings} time(s)'
+
+        print(message)
+
+    print(f'The answer for part 1 is {answer_1}')
+    print(f'The answer for part 2 is {answer_2}')
+
+
+with open(INPUT_FILE) as file:
+    find_answer(file)
