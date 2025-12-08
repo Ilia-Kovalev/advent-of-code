@@ -1,6 +1,7 @@
 from typing import Iterable
 from functools import reduce
 import operator
+import numpy as np
 
 INPUT_FILE = '2025/8_input.txt'
 
@@ -16,34 +17,49 @@ def find_answer(lines: Iterable[str], n_connections):
                 distances.append(
                     sum(map(lambda ps: (ps[0] - ps[1]) ** 2, zip(p1, p2))))
 
-    connections = []
-    while len(connections) < n_connections:
-        idx_shortest = min(range(len(distances)), key=lambda i: distances[i])
+    circuits = [{i} for i in range(len(points))]
+    n_connected = 0
+    last_connected = None
+    n_possible_connections = sum(x < float('inf') for x in distances)
+    distances = np.array(distances)
+    while n_connected < n_possible_connections:
+        idx_shortest = distances.argmin()
         i_shortest = idx_shortest // len(points)
         j_shortest = idx_shortest % len(points)
-        connections.append((i_shortest, j_shortest))
         distances[idx_shortest] = float('inf')
-        print(f'{len(connections)} / {n_connections}')
+        print(f'{n_connected} / {n_possible_connections}')
+        boxes = {i_shortest, j_shortest}
 
-    circuits = []
-    while connections:
-        boxes = set(connections.pop())
+        # print(points[i_shortest], points[j_shortest])
+
         i_found = []
+        already_connected = False
         for i, c in enumerate(circuits):
+            if not boxes - c:
+                already_connected = True
+                break
+
             if boxes & c:
                 c |= boxes
                 i_found.append(i)
-
-        if not i_found:
-            circuits.append(boxes)
 
         if len(i_found) == 2:
             circuits[i_found[0]] |= circuits[i_found[1]]
             del circuits[i_found[1]]
 
-    answer = reduce(operator.mul, map(len, sorted(
-        circuits, key=len, reverse=True)[:3]), 1)
+        if not already_connected:
+            last_connected = boxes
+
+        n_connected += 1
+
+        if n_connected == n_connections:
+            answer = reduce(operator.mul, map(len, sorted(
+                circuits, key=len, reverse=True)[:3]), 1)
+
+    i1, i2 = last_connected
+    answer2 = points[i1][0] * points[i2][0]
     print(f'Answer is {answer}')
+    print(f'Answer2 is {answer2}')
 
 
 EXAMPLE = iter('''
