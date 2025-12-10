@@ -1,18 +1,21 @@
 from typing import Iterable
-
+import numpy as np
+from scipy.optimize import linprog
 
 INPUT_FILE = '2025/10_input.txt'
 
 
 def find_answer(lines: Iterable[str]):
     answer = 0
+    answer2 = 0
 
     for line in lines:
-        parts = line.split(' ')
+        parts = line.strip().split(' ')
         joltage = parts.pop()
         buttons = parts[1:]
 
         expected_state = tuple([True if ch == '#' else False for ch in parts[0][1:-1]])
+        joltage = np.array([int(v) for v in joltage[1:-1].split(',')])
 
         buttons = [[int(i) for i in button[1:-1].split(',')] for button in buttons]
         buttons = [tuple(True if i in b else False for i in range(len(expected_state))) for b in buttons]
@@ -32,11 +35,17 @@ def find_answer(lines: Iterable[str]):
             known_states |= states_to_check
             new_states -= known_states
             states_to_check = new_states
-            
-        print(i_steps)
+
         answer += i_steps
 
+        solution = linprog(np.ones((len(buttons),)),
+                           A_eq=np.array(buttons, int).T, b_eq=joltage, integrality=1)
+        print(solution)
+        answer2 += solution.fun
+
     print(f"Answer is {answer}")
+    print(f"Answer2 is {answer2}")
+
 
 
 EXAMPLE = iter('''
